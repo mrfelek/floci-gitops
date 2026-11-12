@@ -1,0 +1,63 @@
+# Argo CD on Floci's dev-eu-central-1 cluster: one instance of each component, no Dex, no notifications, no
+# ingress. The UI is reached by port-forward only (Freelens, or
+# `kubectl --context floci-dev-eu-central-1 -n argocd port-forward svc/argocd-server 8080:443`).
+# Argo CD 3.5 is the newest line tested on the cluster's Kubernetes 1.33. Installed once by Helm (see README.md).
+global:
+  domain: localhost:8080
+
+dex:
+  enabled: false
+notifications:
+  enabled: false
+
+# Requests only, so the scheduler counts them on the node's ~2.2 GiB; Prometheus (k8s/monitoring) scrapes the metrics
+# services through their prometheus.io annotations.
+controller:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+server:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8083"
+repoServer:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8084"
+applicationSet:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+redis:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi

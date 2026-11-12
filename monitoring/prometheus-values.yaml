@@ -1,0 +1,35 @@
+# Prometheus for Freelens's charts on Floci's dev-eu-central-1 cluster, and nothing else: no Alertmanager, no
+# Pushgateway, no ingress. Freelens reads it through the Kubernetes API proxy and finds the server by this chart's
+# labels (its "Helm" / auto-detect provider). Argo CD deploys it from apps/prometheus.yaml.
+alertmanager:
+  enabled: false
+prometheus-pushgateway:
+  enabled: false
+
+# Freelens's cluster and node charts read node-exporter (usage) and kube-state-metrics (requests, limits, capacity);
+# pod and container charts read the kubelet's cAdvisor metrics, which the server scrapes through the API server.
+kube-state-metrics:
+  enabled: true
+prometheus-node-exporter:
+  enabled: true
+  # Floci's EKS node is a k3s container whose / is a private mount, so the chart's HostToContainer propagation
+  # fails ("path / is mounted on / but it is not a shared or slave mount").
+  hostRootFsMount:
+    mountPropagation: None
+
+server:
+  global:
+    scrape_interval: 30s
+  # The cluster has no storage class: the data lives in an emptyDir, bounded, and starts over with a new pod.
+  persistentVolume:
+    enabled: false
+  emptyDir:
+    sizeLimit: 2Gi
+  retention: 7d
+  retentionSize: 1GB
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      memory: 768Mi
