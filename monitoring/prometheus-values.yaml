@@ -20,13 +20,16 @@ prometheus-node-exporter:
 server:
   global:
     scrape_interval: 30s
-  # The cluster has no storage class: the data lives in an emptyDir, bounded, and starts over with a new pod.
+  # On the NAS through the nfs StorageClass (storage/csi-driver-nfs-values.yaml), so the data outlives the pod.
+  # Prometheus doesn't support NFS for its database: a corrupted block would cost these metrics only. The chart's
+  # Recreate strategy keeps a single writer.
   persistentVolume:
-    enabled: false
-  emptyDir:
-    sizeLimit: 2Gi
+    enabled: true
+    storageClass: nfs
+    size: 4Gi
   retention: 7d
-  retentionSize: 1GB
+  # Under the volume's size, with room for compaction and the write-ahead log.
+  retentionSize: 3GB
   resources:
     requests:
       cpu: 100m
