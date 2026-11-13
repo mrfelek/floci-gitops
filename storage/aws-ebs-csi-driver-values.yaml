@@ -1,13 +1,34 @@
 # EBS volumes for Floci's dev-eu-central-1 cluster. Floci backs each volume with a file and a loop device, which it
-# attaches into the node's container as AttachVolume names it; the node plugin formats and mounts it. The controller
-# takes its AWS identity through EKS Pod Identity (the cluster's Terraform: role <cluster>-ebs-csi-driver with
-# AmazonEBSCSIDriverPolicy, associated with kube-system/ebs-csi-controller-sa), which on Floci also gives it Floci's
-# endpoint. Argo CD deploys it from apps/aws-ebs-csi-driver.yaml.
+# attaches into the node's container as AttachVolume names it; the node plugin formats and mounts it. Argo CD deploys
+# it from apps/aws-ebs-csi-driver.yaml.
 controller:
   # Given, so the controller needn't look it up through IMDS.
   region: eu-central-1
   # The cluster has one node.
   replicaCount: 1
+  # The controller's AWS identity, through IRSA: the cluster's Terraform gives the role <cluster>-ebs-csi-driver,
+  # with AmazonEBSCSIDriverPolicy, to kube-system/ebs-csi-controller-sa's projected token (audience
+  # sts.amazonaws.com). Floci serves EKS Pod Identity only with TLS on, as its admission webhook must be https, and
+  # without that webhook nothing projects the token, so it is mounted here. The role's ARN and Floci's endpoint
+  # (AWS_ROLE_ARN, AWS_ENDPOINT_URL) come from the ConfigMap ebs-csi-floci, kept out of this repository.
+  env:
+    - name: AWS_WEB_IDENTITY_TOKEN_FILE
+      value: /var/run/secrets/eks.amazonaws.com/serviceaccount/token
+  envFrom:
+    - configMapRef:
+        name: ebs-csi-floci
+  volumeMounts:
+    - name: aws-iam-token
+      mountPath: /var/run/secrets/eks.amazonaws.com/serviceaccount
+      readOnly: true
+  volumes:
+    - name: aws-iam-token
+      projected:
+        sources:
+          - serviceAccountToken:
+              path: token
+              expirationSeconds: 86400
+              audience: sts.amazonaws.com
 
 node:
   # The node's instance ID and zone from its Kubernetes object: the providerID and topology labels Floci sets.

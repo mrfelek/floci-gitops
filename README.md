@@ -40,5 +40,8 @@ From then on, a change merged to `main` is deployed by Argo CD; a new component 
   `storageClassName: nfs`.
 - **aws-ebs-csi-driver 1.68.0** (chart 2.68.0) and the `gp3` StorageClass: EBS volumes, which Floci backs with a
   file and a loop device on the cluster's host and attaches into the node, where the driver formats and mounts
-  them. The controller's AWS identity comes from EKS Pod Identity: the cluster's Terraform gives the role
-  `<cluster>-ebs-csi-driver`, with `AmazonEBSCSIDriverPolicy`, to `kube-system/ebs-csi-controller-sa`.
+  them. The controller's AWS identity comes from IRSA: the cluster's Terraform registers its OIDC issuer and gives
+  the role `<cluster>-ebs-csi-driver`, with `AmazonEBSCSIDriverPolicy`, to `kube-system/ebs-csi-controller-sa`.
+  The role's ARN and Floci's endpoint come from a ConfigMap kept out of this repository, created once per cluster:
+  `kubectl -n kube-system create configmap ebs-csi-floci --from-literal=AWS_ROLE_ARN=<role ARN>
+  --from-literal=AWS_ENDPOINT_URL=<Floci endpoint>`.
