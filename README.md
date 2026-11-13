@@ -12,6 +12,7 @@ Amazon EKS: `dev-eu-central-1`, a single k3s node on Kubernetes 1.33. Argo CD de
 | `argocd/argocd-values.yaml` | Values for Argo CD itself, installed once by Helm. |
 | `monitoring/prometheus-values.yaml` | Values for Prometheus, deployed by `apps/prometheus.yaml`. |
 | `storage/csi-driver-nfs-values.yaml` | Values for the NFS CSI driver and the `nfs` StorageClass, deployed by `apps/csi-driver-nfs.yaml`. |
+| `storage/aws-ebs-csi-driver-values.yaml` | Values for the EBS CSI driver and the `gp3` StorageClass, deployed by `apps/aws-ebs-csi-driver.yaml`. |
 
 ## Bootstrap
 
@@ -37,3 +38,7 @@ From then on, a change merged to `main` is deployed by Argo CD; a new component 
   deleted with its claim. The share admits the cluster's VM alone and maps root to root, so the driver can make each
   volume's directory and a pod's `fsGroup` owns its files. It isn't the default class: a claim names
   `storageClassName: nfs`.
+- **aws-ebs-csi-driver 1.68.0** (chart 2.68.0) and the `gp3` StorageClass: EBS volumes, which Floci backs with a
+  file and a loop device on the cluster's host and attaches into the node, where the driver formats and mounts
+  them. The controller's AWS identity comes from EKS Pod Identity: the cluster's Terraform gives the role
+  `<cluster>-ebs-csi-driver`, with `AmazonEBSCSIDriverPolicy`, to `kube-system/ebs-csi-controller-sa`.

@@ -1,0 +1,28 @@
+# EBS volumes for Floci's dev-eu-central-1 cluster. Floci backs each volume with a file and a loop device, which it
+# attaches into the node's container as AttachVolume names it; the node plugin formats and mounts it. The controller
+# takes its AWS identity through EKS Pod Identity (the cluster's Terraform: role <cluster>-ebs-csi-driver with
+# AmazonEBSCSIDriverPolicy, associated with kube-system/ebs-csi-controller-sa), which on Floci also gives it Floci's
+# endpoint. Argo CD deploys it from apps/aws-ebs-csi-driver.yaml.
+controller:
+  # Given, so the controller needn't look it up through IMDS.
+  region: eu-central-1
+  # The cluster has one node.
+  replicaCount: 1
+
+node:
+  # The node's instance ID and zone from its Kubernetes object: the providerID and topology labels Floci sets.
+  metadataSources: kubernetes
+  # A Linux cluster.
+  enableWindows: false
+
+storageClasses:
+  - name: gp3
+    volumeBindingMode: WaitForFirstConsumer
+    reclaimPolicy: Delete
+    allowVolumeExpansion: true
+    parameters:
+      type: gp3
+
+# The chart's test pod, for `helm test`, which nothing here runs.
+helmTester:
+  enabled: false

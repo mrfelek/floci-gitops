@@ -1,0 +1,26 @@
+# The EBS CSI driver and the `gp3` StorageClass: volumes Floci backs with loop devices on the cluster's host.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aws-ebs-csi-driver
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+      chart: aws-ebs-csi-driver
+      targetRevision: 2.68.0
+      helm:
+        releaseName: aws-ebs-csi-driver
+        valueFiles:
+          - $values/storage/aws-ebs-csi-driver-values.yaml
+    - repoURL: https://github.com/mrfelek/floci-gitops.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
