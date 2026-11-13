@@ -1,0 +1,21 @@
+# NFS volumes for Floci's dev-eu-central-1 cluster, on the TrueNAS dataset nas/Backup/k8s-storage/dev-eu-central-1,
+# one dataset per cluster. The share admits VM 114 alone and maps root to root (maproot), so the driver can make each
+# volume's directory and the kubelet can give a pod's fsGroup its files; other users keep their own ids. Argo CD
+# deploys it from apps/csi-driver-nfs.yaml.
+controller:
+  # The cluster has no VolumeSnapshot CRDs, which the snapshotter sidecar needs.
+  enableSnapshotter: false
+
+storageClass:
+  create: true
+  name: nfs
+  parameters:
+    server: nas.home.lan
+    share: /mnt/nas/Backup/k8s-storage/dev-eu-central-1
+    # One directory per volume, named so it can be told apart on the NAS.
+    subDir: ${pvc.metadata.namespace}-${pvc.metadata.name}-${pv.metadata.name}
+  # As EKS's storage classes: a volume goes with its claim.
+  reclaimPolicy: Delete
+  volumeBindingMode: Immediate
+  mountOptions:
+    - nfsvers=4.1
