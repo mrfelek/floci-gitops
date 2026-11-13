@@ -31,8 +31,8 @@ From then on, a change merged to `main` is deployed by Argo CD; a new component 
   `kubectl -n argocd port-forward svc/argocd-server 8080:443`, then https://localhost:8080 as `admin`, with the
   password in the `argocd-initial-admin-secret` secret.
 - **Prometheus** (prometheus-community chart 29.47.2), only for Freelens's charts: the server, node-exporter and
-  kube-state-metrics, with no Alertmanager, Pushgateway or ingress. Its data lives on a 4 GiB `nfs` volume, kept 7
-  days or up to 3 GB. Prometheus doesn't support NFS for its database, which these metrics can afford.
+  kube-state-metrics, with no Alertmanager, Pushgateway or ingress. Its data lives on a 4 GiB `gp3` EBS volume
+  (ext4), kept 7 days or up to 3 GB.
 - **csi-driver-nfs 4.13.6** and the `nfs` StorageClass: volumes on the NAS, NFS 4.1, in
   `nas.home.lan:/mnt/nas/Backup/k8s-storage/dev-eu-central-1` (a dataset per cluster), one directory per volume,
   deleted with its claim. The share admits the cluster's VM alone and maps root to root, so the driver can make each
@@ -42,6 +42,8 @@ From then on, a change merged to `main` is deployed by Argo CD; a new component 
   file and a loop device on the cluster's host and attaches into the node, where the driver formats and mounts
   them. The controller's AWS identity comes from IRSA: the cluster's Terraform registers its OIDC issuer and gives
   the role `<cluster>-ebs-csi-driver`, with `AmazonEBSCSIDriverPolicy`, to `kube-system/ebs-csi-controller-sa`.
+  Floci checks EC2's volume calls on `*` rather than the volume's ARN, which the managed policy's statements don't
+  match, so the role also carries an inline policy granting the driver's writes on `*` until Floci reads them.
   The role's ARN and Floci's endpoint come from a ConfigMap kept out of this repository, created once per cluster:
   `kubectl -n kube-system create configmap ebs-csi-floci --from-literal=AWS_ROLE_ARN=<role ARN>
   --from-literal=AWS_ENDPOINT_URL=<Floci endpoint>`.

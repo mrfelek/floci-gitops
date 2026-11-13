@@ -20,12 +20,12 @@ prometheus-node-exporter:
 server:
   global:
     scrape_interval: 30s
-  # On the NAS through the nfs StorageClass (storage/csi-driver-nfs-values.yaml), so the data outlives the pod.
-  # Prometheus doesn't support NFS for its database: a corrupted block would cost these metrics only. The chart's
-  # Recreate strategy keeps a single writer.
+  # On an EBS volume through the gp3 StorageClass (storage/aws-ebs-csi-driver-values.yaml), so the data outlives the
+  # pod: an ext4 filesystem, which Prometheus supports for its database, unlike NFS. The chart's Recreate strategy
+  # releases the volume before the next pod attaches it.
   persistentVolume:
     enabled: true
-    storageClass: nfs
+    storageClass: gp3
     size: 4Gi
   retention: 7d
   # Under the volume's size, with room for compaction and the write-ahead log.
