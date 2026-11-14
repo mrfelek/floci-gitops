@@ -36,3 +36,8 @@ server:
       memory: 256Mi
     limits:
       memory: 768Mi
+  # A NodePort, so the dev cluster's internal load balancer can target it and the home LAN reach Prometheus through it.
+  # Pinned, because the load balancer's target group names the port.
+  service:
+    type: NodePort
+    nodePort: 30090
