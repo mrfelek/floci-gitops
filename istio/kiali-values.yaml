@@ -1,0 +1,29 @@
+# Kiali, Istio's console. Reachable from the home LAN through the dev cluster's internal load balancer, which targets
+# the pinned NodePort below; the load balancer and its host name live in the homelab Terraform.
+auth:
+  # No login: the console is reachable from the home LAN only.
+  strategy: anonymous
+
+deployment:
+  service_type: NodePort
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      memory: 512Mi
+
+server:
+  # Pinned, because the load balancer's target group names the port.
+  node_port: 30201
+  # Served at the host's root, since the console has a host name of its own.
+  web_root: /
+
+external_services:
+  prometheus:
+    # The cluster's Prometheus (apps/prometheus.yaml), which scrapes the sidecars' merged metrics.
+    url: http://prometheus-server.monitoring.svc.cluster.local
+  grafana:
+    enabled: false
+  tracing:
+    enabled: false

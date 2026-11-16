@@ -1,0 +1,37 @@
+# Istio's CRDs and the default validating webhook: the istio/base chart. istiod (apps/istiod.yaml) needs them first.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio-base
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://istio-release.storage.googleapis.com/charts
+    chart: base
+    targetRevision: 1.30.8
+    helm:
+      releaseName: istio-base
+      valuesObject:
+        defaultRevision: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: istio-system
+  # istiod sets the webhook's failure policy and CA bundle itself once it runs.
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - .webhooks[]?.failurePolicy
+        - .webhooks[]?.clientConfig.caBundle
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Istio's largest CRDs pass the 256 KiB annotation limit of a client-side apply.
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true

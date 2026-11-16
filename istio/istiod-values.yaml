@@ -1,0 +1,17 @@
+# istiod for the dev cluster, in sidecar mode: a namespace joins the mesh with the label istio-injection=enabled.
+# Requests are sized for the cluster's single small node (about 2.2 GiB allocatable), where the chart's defaults
+# (istiod 500m / 2 GiB, every sidecar 100m / 128 MiB) would not fit.
+pilot:
+  autoscaleEnabled: false
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 192Mi
+
+global:
+  proxy:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 48Mi
